@@ -1,8 +1,9 @@
-#[cfg(target_os = "linux")]
-mod linux;
+#[cfg_attr(any(target_os = "linux"), path = "ptrace.rs")]
+#[cfg_attr(target_os = "macos", path = "macos.rs")]
+mod tracer;
 
-#[cfg(target_os = "linux")]
-use linux::PTrace as Tracer;
+use tracer::Tracer;
+use std::os::raw::c_int;
 
 ///
 /// A `ProcessTracer` provides functionality for tracing and inspecting a
@@ -10,44 +11,112 @@ use linux::PTrace as Tracer;
 ///
 trait ProcessTracer {
     ///
-    /// Read 8 bytes from the process memory at the specified address
+    /// Read a word from the process text at the specified address
     ///
-    fn peek(pid: i32, addr: u64) -> i64;
+    fn read_text(pid: i32, addr: u64) -> c_int;
 
     ///
-    /// Write 8 bytes to the process memory at the specified address
+    /// Write a word to the process text at the specified address
     ///
-    fn poke(pid: i32, addr: u64, data: u64) -> i64;
+    fn write_text(pid: i32, addr: u64, data: u64) -> c_int;
+
+    ///
+    /// Read a word from the process data at the specified address
+    ///
+    fn read_data(pid: i32, addr: u64) -> c_int;
+
+    ///
+    /// Write a word to the process data at the specified address
+    ///
+    fn write_data(pid: i32, addr: u64, data: u64) -> c_int;
 
     ///
     /// Continue execution of the process, until the next signal
     ///
-    fn proceed(pid: i32) -> i64;
+    fn proceed(pid: i32) -> c_int;
+
+    ///
+    /// Indicate that this process is waiting to be traced.
+    /// Typically used before exec.
+    ///
+    fn trace_me() -> c_int;
+
+    ///
+    /// Step a single instruction.
+    ///
+    fn step(pid: i32) -> c_int;
+
+    ///
+    /// Attach to a given PID
+    ///
+    fn attach(pid: i32) -> c_int;
+
+    ///
+    /// Detach from a given PID
+    ///
+    fn detach(pid: i32) -> c_int;
 }
 
 ///
-/// Read 8 bytes from the process memory at the specified address.
+/// Read a word from the process text at the specified address
 ///
-/// Uses a platform-specific tracer
-///
-pub fn peek(pid: i32, addr: u64) -> i64 {
-    Tracer::peek(pid, addr)
+pub fn read_text(pid: i32, addr: u64) -> c_int {
+    Tracer::read_text(pid, addr)
 }
 
 ///
-/// Write 8 bytes to the process memory at the specified address.
+/// Write a word to the process text at the specified address
 ///
-/// Uses a platform-specific tracer
+pub fn write_text(pid: i32, addr: u64, data: u64) -> c_int {
+    Tracer::write_text(pid, addr, data)
+}
+
 ///
-pub fn poke(pid: i32, addr: u64, data: u64) -> i64 {
-    Tracer::poke(pid, addr, data)
+/// Read a word from the process data at the specified address
+///
+pub fn read_data(pid: i32, addr: u64) -> c_int {
+    Tracer::read_data(pid, addr)
+}
+
+///
+/// Write a word to the process data at the specified address
+///
+pub fn write_data(pid: i32, addr: u64, data: u64) -> c_int {
+    Tracer::write_data(pid, addr, data)
 }
 
 ///
 /// Continue execution of the process, until the next signal
 ///
-/// Uses a platform-specific tracer
-///
-pub fn proceed(pid: i32) -> i64 {
+pub fn proceed(pid: i32) -> c_int {
     Tracer::proceed(pid)
+}
+
+///
+/// Indicate that this process is waiting to be traced.
+/// Typically used before exec.
+///
+pub fn trace_me() -> c_int {
+    Tracer::trace_me()
+}
+
+///
+/// Step a single instruction.
+///
+pub fn step(pid: i32) -> c_int {
+    Tracer::step(pid)
+}
+
+///
+/// Attach to a given PID
+///
+pub fn attach(pid: i32) -> c_int {
+    Tracer::attach(pid)
+}
+
+///
+/// Detach from a given PID
+///
+pub fn detach(pid: i32) -> c_int {
+    Tracer::detach(pid)
 }

@@ -13,3 +13,4 @@ path = 'bin/sunnydbg.rs'
 [dependencies]
 libc = "0.2.84"
 rustyline = "7.1.0"
+cfg-if = "1.0.0"

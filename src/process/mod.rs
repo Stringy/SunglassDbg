@@ -5,6 +5,14 @@ use std::ptr;
 
 use crate::trace;
 
+cfg_if! {
+    if #[cfg(any(target_os = "linux"))] {
+        use libc::__errno_location as errno_location;
+    } else if #[cfg(any(target_os = "macos"))] {
+        use libc::__error as errno_location;
+    }
+}
+
 pub type Result<T> = std::result::Result<T, ()>;
 
 pub struct Process {
@@ -17,32 +25,18 @@ impl Process {
             pid
         }
     }
-
-    pub fn peek(&self, addr: u64) -> i64 {
-        trace::peek(self.pid, addr)
-    }
-
-    pub fn poke(&self, addr: u64, data: u64) -> i64 {
-        trace::poke(self.pid, addr, data)
-    }
-
-    pub fn proceed(&self) -> i64 {
-        trace::proceed(self.pid)
-    }
 }
 
 ///
 ///
 ///
 pub fn start<P: Into<PathBuf>>(path: P, args: Vec<String>, env: Option<Vec<String>>) -> Result<Process> {
-    if cfg!(target_os="linux") {
+    if cfg!(any(target_os="linux", target_os="macos")) {
         do_start(path.into(), args, env, || {
-            unsafe {
-                libc::ptrace(libc::PTRACE_TRACEME, 0, 0, 0)
-            }
+            trace::trace_me() as i64
         })
     } else {
-        unimplemented!();
+        unimplemented!("Unknown platform!");
     }
 }
 
@@ -77,7 +71,7 @@ fn do_start<F>(path: PathBuf, args: Vec<String>, env: Option<Vec<String>>, pre_e
 
             unsafe {
                 libc::execve(path, args, env);
-                let error = CString::from_raw(libc::strerror(*libc::__errno_location()));
+                let error = CString::from_raw(libc::strerror(*errno_location()));
                 unreachable!("execve failed!: {}", error.into_string().unwrap());
             }
         }

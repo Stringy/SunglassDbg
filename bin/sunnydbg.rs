@@ -1,15 +1,16 @@
-extern crate sunglassdbg;
+extern crate sundbg;
 extern crate rustyline;
 
-use sunglassdbg::process;
+use sundbg::process;
 use std::env;
 
 fn main() {
     println!("SunglassDbg v0.1");
 
-    let p = process::start("/bin/ls", vec![], None).unwrap();
     let mut rl = rustyline::Editor::<()>::new();
     while let Ok(line) = rl.readline("sunnyd>> ") {
-        println!("{}", line);
+        if !line.is_empty() {
+            println!("{}", line);
+        }
     }
 }

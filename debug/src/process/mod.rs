@@ -15,6 +15,7 @@ cfg_if! {
 
 pub type Result<T> = std::result::Result<T, ()>;
 
+#[derive(Default)]
 pub struct Process {
     pub pid: i32
 }
@@ -24,6 +25,10 @@ impl Process {
         Self {
             pid
         }
+    }
+
+    pub fn attach(_pid: i32) -> Self {
+        unimplemented!();
     }
 
     pub fn start<P: Into<PathBuf>>(path: P, args: Vec<String>, env: Option<Vec<String>>) -> Result<Self> {

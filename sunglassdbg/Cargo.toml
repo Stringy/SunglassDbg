@@ -8,4 +8,10 @@ edition = "2018"
 
 [dependencies]
 debug = { path = "../debug" }
-tui = { path = "../tui" }
+tui = { path = "../ui/tui", optional = true }
+cli = { path = "../ui/cli", optional = true }
+
+[features]
+default = ["use-cli"]
+use-cli = ["cli"]
+use-tui = ["tui"]

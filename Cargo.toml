@@ -2,5 +2,7 @@
 members = [
     "sunglassdbg",
     "debug",
-    "tui"
+    "common",
+    "ui/tui",
+    "ui/cli",
 ]

@@ -13,9 +13,12 @@ use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, List, ListItem, Paragraph};
 use unicode_width::UnicodeWidthStr;
 
+use log::info;
+
 use sundbg::Debugger;
 
-use crate::event::{Event, Events};
+use crate::event_bus::{Bus, Event};
+use crate::logger::init_logging;
 
 const DEFAULT_HIST_FILE: &'static str = ".sdbg_history";
 
@@ -47,7 +50,9 @@ impl App {
         let backend = TermionBackend::new(stdout);
         let mut terminal = Terminal::new(backend)?;
 
-        let events = Events::new();
+        init_logging().unwrap();
+
+        let bus = Bus::instance();
 
         loop {
             terminal.draw(|f| {
@@ -66,15 +71,20 @@ impl App {
                 self.render_input_box(&chunks[1], f);
             })?;
 
-
-            let event = events.next()?;
-            if let Event::Input(key) = event {
-                if key == Key::Ctrl('c') {
-                    break;
+            loop {
+                match bus.try_next() {
+                    None => break,
+                    Some(event) => {
+                        if let Event::Input(key) = event {
+                            if key == Key::Ctrl('c') {
+                                break;
+                            }
+                        } else {
+                            self.handle_event(event)?;
+                        }
+                    }
                 }
             }
-
-            self.handle_input(event)?;
         }
 
         Ok(())
@@ -108,20 +118,24 @@ impl App {
         f.render_widget(messages, *chunk);
     }
 
-    fn handle_input(&mut self, event: Event<Key>) -> AppResult {
-        if let Event::Input(input) = event {
-            match input {
-                Key::Char('\n') => {
-                    let command: String = self.input.drain(..).collect();
-                    self.handle_command(command)?;
+    fn handle_event(&mut self, event: Event) -> AppResult {
+        match event {
+            Event::Input(key) => {
+                match key {
+                    Key::Char('\n') => {
+                        let command: String = self.input.drain(..).collect();
+                        self.handle_command(command)?;
+                    }
+                    Key::Ctrl('u') => { self.input.clear(); }
+                    Key::Char(c) => { self.input.push(c); }
+                    Key::Backspace => { self.input.pop(); }
+                    Key::Up => {}
+                    Key::Down => {}
+                    _ => {}
                 }
-                Key::Ctrl('u') => { self.input.clear(); }
-                Key::Char(c) => { self.input.push(c); }
-                Key::Backspace => { self.input.pop(); }
-                Key::Up => {}
-                Key::Down => {}
-                _ => {}
             }
+            Event::Message(msg) => { self.output.push(msg); }
+            Event::Tick => {}
         }
         Ok(())
     }

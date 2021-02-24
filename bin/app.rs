@@ -1,16 +1,21 @@
-use std::io;
-use termion::screen::AlternateScreen;
-use tui::backend::{TermionBackend, Backend};
-use tui::{Terminal, Frame};
-use termion::raw::IntoRawMode;
-use termion::input::MouseTerminal;
-use crate::event::{Event, Events};
-use termion::event::Key;
 use std::error::Error;
-use tui::widgets::{ListItem, List, Block, Borders};
-use tui::text::{Span, Spans};
-use tui::layout::{Layout, Direction, Constraint, Corner, Rect};
+use std::io;
+use std::path::PathBuf;
+
+use termion::event::Key;
+use termion::input::MouseTerminal;
+use termion::raw::IntoRawMode;
+use termion::screen::AlternateScreen;
+use tui::{Frame, Terminal};
+use tui::backend::{Backend, TermionBackend};
+use tui::layout::{Constraint, Corner, Direction, Layout, Rect};
+use tui::text::{Span, Spans, Text};
+use tui::widgets::{Block, Borders, List, ListItem, Paragraph};
 use unicode_width::UnicodeWidthStr;
+
+use sundbg::Debugger;
+
+use crate::event::{Event, Events};
 
 const DEFAULT_HIST_FILE: &'static str = ".sdbg_history";
 
@@ -21,11 +26,13 @@ pub(crate) struct App {
     output: Vec<String>,
     history: Vec<String>,
     history_file: String,
+    debugger: Debugger,
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new<P: Into<PathBuf>>(path: P) -> Self {
         Self {
+            debugger: Debugger::start(path),
             input: String::new(),
             output: Vec::new(),
             history: Vec::new(),
@@ -74,12 +81,8 @@ impl App {
     }
 
     fn render_output_box<B: Backend>(&mut self, chunk: &Rect, f: &mut Frame<B>) {
-        let output_lines: Vec<ListItem> = self.output.iter()
-            .map(|line| {
-                let content = vec![Spans::from(Span::raw(line))];
-                ListItem::new(content)
-            }).collect();
-        let output = List::new(output_lines)
+        let output_lines = Text::raw(self.output.join("\n"));
+        let output = Paragraph::new(output_lines)
             .block(Block::default().borders(Borders::ALL).title("Output"));
         f.render_widget(output, *chunk);
     }

@@ -36,6 +36,10 @@ impl Process {
         }
     }
 
+    pub fn proceed(&self) {
+        trace::proceed(self.pid);
+    }
+
     fn do_start<F>(path: PathBuf, args: Vec<String>, env: Option<Vec<String>>, pre_exec: F) -> Result<Process>
         where F: Fn() -> i64 {
         let pid = unsafe { libc::fork() };

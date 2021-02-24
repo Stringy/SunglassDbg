@@ -1,5 +1,3 @@
-extern crate rustyline;
-extern crate sundbg;
 extern crate tui;
 
 use std::error::Error;

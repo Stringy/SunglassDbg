@@ -13,7 +13,7 @@ use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, List, ListItem, Paragraph};
 use unicode_width::UnicodeWidthStr;
 
-use sundbg::Debugger;
+use debug::Debugger;
 
 use crate::event::{Event, Events};
 

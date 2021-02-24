@@ -21,7 +21,7 @@ const DEFAULT_HIST_FILE: &'static str = ".sdbg_history";
 
 type AppResult = Result<(), Box<dyn Error>>;
 
-pub(crate) struct App {
+pub struct App {
     input: String,
     output: Vec<String>,
     history: Vec<String>,

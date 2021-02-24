@@ -1,14 +1,12 @@
 extern crate rustyline;
 extern crate sundbg;
 extern crate tui;
-extern crate unicode_width;
 
 use std::error::Error;
 
-mod event;
-mod app;
+mod cmd;
 
-use crate::app::App;
+use tui::app::App;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut app = App::new(std::env::args().nth(1).unwrap());

@@ -1,4 +1,5 @@
 extern crate rustyline;
+extern crate env_logger;
 
 use std::error::Error;
 use rustyline::{Config, CompletionType, EditMode, Editor, KeyEvent, Cmd};
@@ -19,6 +20,8 @@ impl App {
     }
 
     pub fn run(&self) -> Result<(), Box<dyn Error>> {
+        env_logger::init();
+
         let cmdline = CommandLine::parse_from(std::env::args());
         let debugger = Debugger::from_config(cmdline);
 
@@ -40,6 +43,12 @@ impl App {
                         continue;
                     }
                     rl.add_history_entry(line.as_str());
+
+                    match line.as_str() {
+                        "continue" => { debugger.proceed(); }
+                        "run" => { debugger.run(vec![], vec![]); }
+                        _ => { println!("unknown command!"); }
+                    }
                 }
                 Err(e) => {
                     use rustyline::error::ReadlineError::*;

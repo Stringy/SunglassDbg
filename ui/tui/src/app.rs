@@ -26,13 +26,11 @@ pub struct App {
     output: Vec<String>,
     history: Vec<String>,
     history_file: String,
-    debugger: Debugger,
 }
 
 impl App {
     pub fn new<P: Into<PathBuf>>(path: P) -> Self {
         Self {
-            debugger: Debugger::start(path),
             input: String::new(),
             output: Vec::new(),
             history: Vec::new(),

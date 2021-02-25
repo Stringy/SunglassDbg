@@ -1,4 +1,5 @@
 extern crate libc;
+extern crate log;
 
 #[macro_use]
 extern crate cfg_if;
@@ -8,12 +9,15 @@ use crate::process::Process;
 use std::error::Error;
 use std::borrow::Borrow;
 use common::config::Config;
+use std::cell::RefCell;
+
+use log::{info, warn};
 
 pub mod trace;
 pub mod process;
 
 pub struct Debugger {
-    process: Option<Process>,
+    process: RefCell<Option<Process>>,
     file: String,
 }
 
@@ -22,9 +26,9 @@ impl Debugger {
         let cfg = cfg.into();
 
         let process = if cfg.should_attach {
-            Process::attach(cfg.pid.unwrap())
+            Some(Process::attach(cfg.pid.unwrap()))
         } else {
-            Default::default()
+            None
         };
 
         let file = match cfg.file {
@@ -34,22 +38,29 @@ impl Debugger {
 
 
         Self {
-            process: Some(process),
+            process: RefCell::new(process),
             file,
         }
     }
 
-    pub fn start<P: Into<PathBuf>>(path: P) -> Self {
-        let path = path.into();
-        Self {
-            process: Some(Process::start(path.clone(), vec![], None).unwrap()),
-            file: String::from(path.to_str().unwrap()),
+    pub fn run(&self, args: Vec<String>, env: Vec<String>) -> Result<(), Box<dyn Error>> {
+        {
+            let maybe_process = self.process.borrow();
+            if maybe_process.is_some() {
+                warn!("Already tracing a process");
+                return Ok(());
+            }
         }
+
+        let process = Process::start(self.file.clone(), args, Some(env)).unwrap();
+        info!("started process: {}", process.pid);
+        self.process.replace(Some(process));
+        Ok(())
     }
 
     pub fn proceed(&self) {
-        if let Some(proc) = &self.process {
-            proc.proceed()
+        if let Some(process) = &*self.process.borrow() {
+            process.proceed()
         }
     }
 }

@@ -10,3 +10,4 @@ edition = "2018"
 rustyline = "7.1.0"
 common = { path = "../../common" }
 debug = { path = "../../debug" }
+env_logger = "0.8.3"

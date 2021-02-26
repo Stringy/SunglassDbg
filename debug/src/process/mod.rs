@@ -52,6 +52,10 @@ impl Process {
         }
     }
 
+    ///
+    /// Continue executing until the next event, where that can be a breakpoint
+    /// is hit (SIGTRAP), the process has exited, or other possible wait statuses.
+    ///
     pub fn proceed(&self) -> Result<()> {
         trace::proceed(self.pid).map_err(DebugError::TraceFailure)?;
         match waitpid(Pid::from_raw(self.pid), None) {
@@ -71,10 +75,16 @@ impl Process {
         Ok(())
     }
 
+    ///
+    /// Reads a single word from the given address in the process memory.
+    ///
     pub fn read(&self, addr: u64) -> Result<i64> {
         trace::read_text(self.pid, addr).map_err(DebugError::TraceFailure)
     }
 
+    ///
+    /// Writes a single word to the given address in the process memory.
+    ///
     pub fn write(&self, addr: u64, data: u64) -> Result<()> {
         trace::write_text(self.pid, addr, data).map_err(DebugError::TraceFailure)
     }
@@ -119,7 +129,10 @@ impl Process {
     }
 }
 
-
+///
+/// Helper method for converting a `String` into a raw c-style string
+/// pointer.
+///
 fn string_to_ptr(s: String) -> *const c_char {
     let s = CString::new(s).unwrap();
     let p = s.as_ptr();
@@ -127,6 +140,10 @@ fn string_to_ptr(s: String) -> *const c_char {
     p
 }
 
+///
+/// Helper method for converting an entire list of `String`s into raw
+/// c-style string array.
+///
 fn string_vec_to_ptr(v: Vec<String>) -> *const *const c_char {
     let mut strings = Vec::new();
     for s in v {
@@ -135,6 +152,10 @@ fn string_vec_to_ptr(v: Vec<String>) -> *const *const c_char {
     strings.push(ptr::null());
 
     let p = strings.as_ptr();
+    // important to forget them, because otherwise they are invalid by
+    // the time they are used.
+    // This is fine, however, since we're doing this just before
+    // exec'ing in the new process.
     std::mem::forget(strings);
     p
 }

@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::ptr;
 
 use crate::trace;
+use std::error::Error;
 
 cfg_if! {
     if #[cfg(any(target_os = "linux"))] {
@@ -13,7 +14,7 @@ cfg_if! {
     }
 }
 
-pub type Result<T> = std::result::Result<T, ()>;
+pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[derive(Default)]
 pub struct Process {
@@ -49,7 +50,7 @@ impl Process {
         where F: Fn() -> i64 {
         let pid = unsafe { libc::fork() };
         match pid {
-            x if x < 0 => Err(()),
+            x if x < 0 => panic!("fork failed..."),
             x if x > 0 => {
                 // parent
                 Ok(Process::new(x))

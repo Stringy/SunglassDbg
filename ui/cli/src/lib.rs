@@ -1,10 +1,13 @@
 extern crate rustyline;
 extern crate env_logger;
+extern crate debug;
+extern crate commands;
 
 use std::error::Error;
 use rustyline::{Config, CompletionType, EditMode, Editor, KeyEvent, Cmd};
 use common::cli::{CommandLine, Clap};
 use debug::Debugger;
+use commands::{Command, Commands};
 
 const PROMPT: &'static str = "sdbg>> ";
 
@@ -23,7 +26,7 @@ impl App {
         env_logger::init();
 
         let cmdline = CommandLine::parse_from(std::env::args());
-        let debugger = Debugger::from_config(cmdline);
+        let mut debugger = Debugger::from_config(cmdline);
 
         let config = Config::builder()
             .history_ignore_space(true)
@@ -44,10 +47,13 @@ impl App {
                     }
                     rl.add_history_entry(line.as_str());
 
-                    match line.as_str() {
-                        "continue" => { debugger.proceed(); }
-                        "run" => { debugger.run(vec![], vec![]); }
-                        _ => { println!("unknown command!"); }
+                    let error = match Commands::parse_line(line) {
+                        Some(cmd) => cmd.run(&mut debugger),
+                        None => None
+                    };
+
+                    if let Some(error) = error {
+                        eprintln!("{}", error);
                     }
                 }
                 Err(e) => {

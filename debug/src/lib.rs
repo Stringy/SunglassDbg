@@ -52,7 +52,7 @@ impl Debugger {
             }
         }
 
-        let process = Process::start(self.file.clone(), args, Some(env)).unwrap();
+        let process = Process::start(self.file.clone(), args, Some(env))?;
         info!("started process: {}", process.pid);
         self.process.replace(Some(process));
         Ok(())

@@ -14,8 +14,8 @@ pub struct RunCommand {
 }
 
 impl Command for RunCommand {
-    fn run(&self, dbg: &mut Debugger) -> Option<Box<dyn Error>> {
-        dbg.run(self.args.clone(), vec![]).err()?;
-        None
+    fn run(&self, dbg: &mut Debugger) -> Result<(), Box<dyn Error>> {
+        dbg.run(self.args.clone(), vec![])?;
+        Ok(())
     }
 }

@@ -1,13 +1,17 @@
 extern crate rustyline;
-extern crate env_logger;
+extern crate log;
 extern crate debug;
 extern crate commands;
 
 use std::error::Error;
-use rustyline::{Config, CompletionType, EditMode, Editor, KeyEvent, Cmd};
-use common::cli::{CommandLine, Clap};
-use debug::Debugger;
+
+use rustyline::{Cmd, CompletionType, Config, EditMode, Editor, KeyEvent};
+
 use commands::{Command, Commands};
+use common::cli::{Clap, CommandLine};
+use debug::Debugger;
+
+mod logger;
 
 const PROMPT: &'static str = "sdbg>> ";
 
@@ -23,7 +27,7 @@ impl App {
     }
 
     pub fn run(&self) -> Result<(), Box<dyn Error>> {
-        env_logger::init();
+        logger::init_logger();
 
         let cmdline = CommandLine::parse_from(std::env::args());
         let mut debugger = Debugger::from_config(cmdline);
@@ -49,10 +53,10 @@ impl App {
 
                     let error = match Commands::parse_line(line) {
                         Some(cmd) => cmd.run(&mut debugger),
-                        None => None
+                        None => Ok(())
                     };
 
-                    if let Some(error) = error {
+                    if let Err(error) = error {
                         eprintln!("{}", error);
                     }
                 }

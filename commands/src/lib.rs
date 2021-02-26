@@ -3,7 +3,6 @@ mod run;
 
 extern crate clap;
 extern crate debug;
-extern crate log;
 
 use clap::Clap;
 
@@ -13,7 +12,7 @@ use debug::Debugger;
 use std::error::Error;
 
 pub trait Command {
-    fn run(&self, dbg: &mut Debugger) -> Option<Box<dyn Error>>;
+    fn run(&self, dbg: &mut Debugger) -> Result<(), Box<dyn Error>>;
 }
 
 use clap::AppSettings;

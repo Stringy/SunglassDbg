@@ -73,11 +73,29 @@ impl Debugger {
     }
 
     ///
+    /// Checks whether the traced process is currently alive. It may
+    /// be in a stopped state, but still exists.
+    ///
+    pub fn process_is_running(&mut self) -> bool {
+        match &*self.process.borrow() {
+            Some(process) => process.running,
+            _ => false
+        }
+    }
+
+    pub fn detach(&mut self) -> Result<()> {
+        match &mut *self.process.borrow_mut() {
+            Some(process) => process.detach(),
+            None => Ok(())
+        }
+    }
+
+    ///
     /// Continue the traced process. Continues until a signal is received,
     /// or the process exits.
     ///
     pub fn proceed(&self) -> Result<()> {
-        match &*self.process.borrow() {
+        match &mut *self.process.borrow_mut() {
             Some(process) => process.proceed(),
             None => Err(DebugError::InvalidOperation(Reason::NoProcess))
         }

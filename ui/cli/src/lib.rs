@@ -10,6 +10,7 @@ use rustyline::{Cmd, CompletionType, Config, EditMode, Editor, KeyEvent};
 use commands::Commands;
 use common::cli::{Clap, CommandLine};
 use debug::Debugger;
+use std::io::Write;
 
 mod logger;
 
@@ -57,6 +58,19 @@ impl App {
                     }
                     rl.add_history_entry(line.as_str());
 
+                    if line == "exit" {
+                        match self.handle_exit(&mut debugger) {
+                            Ok(should_exit) => {
+                                if should_exit {
+                                    break;
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("{}", e);
+                            }
+                        }
+                    }
+
                     let error = match Commands::parse_line(line) {
                         Some(cmd) => cmd.run(&mut debugger),
                         None => Ok(())
@@ -78,5 +92,30 @@ impl App {
 
         rl.append_history(self.history_file.as_str())?;
         Ok(())
+    }
+
+    fn handle_exit(&self, dbg: &mut Debugger) -> Result<bool, Box<dyn Error>> {
+        if dbg.process_is_running() {
+            let mut confirm = String::new();
+
+            loop {
+                print!("process is still running! detach? (Y/n) ");
+                confirm.clear();
+                std::io::stdout().flush()?;
+                std::io::stdin().read_line(&mut confirm)?;
+                let input = confirm.strip_suffix("\n").unwrap_or_default();
+                match input {
+                    "Y" | "y" | "yes" => {
+                        dbg.detach()?;
+                        return Ok(true);
+                    }
+                    "N" | "n" | "no" => {
+                        return Ok(false);
+                    }
+                    _ => continue
+                };
+            }
+        }
+        Ok(true)
     }
 }

@@ -10,7 +10,6 @@ use nix::unistd::Pid;
 
 use log::info;
 
-
 cfg_if! {
     if #[cfg(any(target_os = "linux"))] {
         use libc::__errno_location as errno_location;
@@ -21,18 +20,26 @@ cfg_if! {
 
 #[derive(Default)]
 pub struct Process {
-    pub pid: i32
+    pub pid: i32,
+    pub running: bool,
 }
 
 impl Process {
     pub fn new(pid: i32) -> Self {
         Self {
-            pid
+            pid,
+            running: true,
         }
     }
 
     pub fn attach(_pid: i32) -> Self {
         unimplemented!();
+    }
+
+    pub fn detach(&mut self) -> Result<()> {
+        trace::detach(self.pid).map_err(DebugError::TraceFailure)?;
+        self.running = false;
+        Ok(())
     }
 
     pub fn start<P: Into<PathBuf>>(path: P, args: Vec<String>, env: Option<Vec<String>>) -> Result<Self> {
@@ -56,11 +63,14 @@ impl Process {
     /// Continue executing until the next event, where that can be a breakpoint
     /// is hit (SIGTRAP), the process has exited, or other possible wait statuses.
     ///
-    pub fn proceed(&self) -> Result<()> {
+    pub fn proceed(&mut self) -> Result<()> {
         trace::proceed(self.pid).map_err(DebugError::TraceFailure)?;
         match waitpid(Pid::from_raw(self.pid), None) {
             Ok(WaitStatus::Stopped(pid, sig)) => info!("process {} stopped with signal {}", pid, sig),
-            Ok(WaitStatus::Exited(pid, status)) => info!("process {} exited (status: {})", pid, status),
+            Ok(WaitStatus::Exited(pid, status)) => {
+                info!("process {} exited (status: {})", pid, status);
+                self.running = false;
+            }
             Ok(WaitStatus::Signaled(pid, sig, _b)) => info!("process {} received signal {}", pid, sig),
             Ok(WaitStatus::PtraceEvent(_, _, _)) => {
                 todo!("ptrace event")

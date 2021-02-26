@@ -38,7 +38,7 @@ impl Display for DebugError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         use DebugError::*;
         match self {
-            InvalidOperation(r) => write!(f, "Unable to start: {}", r),
+            InvalidOperation(r) => write!(f, "Invalid operation: {}", r),
             Sys(inner) => write!(f, "Encountered IO error: {}", inner),
             TraceFailure(t) => write!(f, "tracing failed: {}", t),
             Unknown(n) => write!(f, "unknown error: {}", n)

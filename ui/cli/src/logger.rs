@@ -1,16 +1,17 @@
-use log::{Record, Level, Metadata, SetLoggerError};
+use log::{Record, Metadata, SetLoggerError, LevelFilter};
+use std::io::Write;
 
 static LOGGER: StdoutLogger = StdoutLogger;
 
 pub fn init_logger() -> Result<(), SetLoggerError> {
-    log::set_logger(&LOGGER)
+    log::set_logger(&LOGGER).map(|()| log::set_max_level(LevelFilter::Info))
 }
 
 struct StdoutLogger;
 
 impl log::Log for StdoutLogger {
     fn enabled(&self, _metadata: &Metadata) -> bool {
-        return true;
+        true
     }
 
     fn log(&self, record: &Record) {
@@ -20,7 +21,7 @@ impl log::Log for StdoutLogger {
     }
 
     fn flush(&self) {
-        unimplemented!()
+        std::io::stdout().flush().unwrap()
     }
 }
 

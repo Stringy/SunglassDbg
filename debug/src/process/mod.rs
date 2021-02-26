@@ -5,6 +5,10 @@ use std::ptr;
 
 use crate::error::{DebugError, Result};
 use crate::trace;
+use nix::sys::wait::{waitpid, WaitStatus};
+use nix::unistd::Pid;
+
+use log::info;
 
 
 cfg_if! {
@@ -34,22 +38,52 @@ impl Process {
     pub fn start<P: Into<PathBuf>>(path: P, args: Vec<String>, env: Option<Vec<String>>) -> Result<Self> {
         if cfg!(any(target_os="linux", target_os="macos")) {
             Process::do_start(path.into(), args, env, || {
-                trace::trace_me() as i64
+                use trace::TraceError::*;
+                if let Err(e) = trace::trace_me() {
+                    match e {
+                        Sys(n) => n.raw_os_error().unwrap_or(-1) as i64,
+                    }
+                } else {
+                    0i64
+                }
             })
         } else {
             unimplemented!("Unknown platform!");
         }
     }
 
-    pub fn proceed(&self) {
-        trace::proceed(self.pid);
+    pub fn proceed(&self) -> Result<()> {
+        trace::proceed(self.pid).map_err(DebugError::TraceFailure)?;
+        match waitpid(Pid::from_raw(self.pid), None) {
+            Ok(WaitStatus::Stopped(pid, sig)) => info!("process {} stopped with signal {}", pid, sig),
+            Ok(WaitStatus::Exited(pid, status)) => info!("process {} exited (status: {})", pid, status),
+            Ok(WaitStatus::Signaled(pid, sig, _b)) => info!("process {} received signal {}", pid, sig),
+            Ok(WaitStatus::PtraceEvent(_, _, _)) => {
+                todo!("ptrace event")
+            }
+            Ok(WaitStatus::PtraceSyscall(_)) => {
+                todo!("ptrace syscall")
+            }
+            Ok(WaitStatus::Continued(_)) => {}
+            Ok(WaitStatus::StillAlive) => {}
+            Err(e) => return Err(e.into()),
+        };
+        Ok(())
+    }
+
+    pub fn read(&self, addr: u64) -> Result<i64> {
+        trace::read_text(self.pid, addr).map_err(DebugError::TraceFailure)
+    }
+
+    pub fn write(&self, addr: u64, data: u64) -> Result<()> {
+        trace::write_text(self.pid, addr, data).map_err(DebugError::TraceFailure)
     }
 
     fn do_start<F>(path: PathBuf, args: Vec<String>, env: Option<Vec<String>>, pre_exec: F) -> Result<Process>
         where F: Fn() -> i64 {
         let pid = unsafe { libc::fork() };
         match pid {
-            x if x < 0 => Err(DebugError::IoError(std::io::Error::last_os_error())),
+            x if x < 0 => Err(DebugError::Sys(std::io::Error::last_os_error())),
             x if x > 0 => {
                 // parent
                 Ok(Process::new(x))
@@ -57,14 +91,14 @@ impl Process {
             x if x == 0 => {
                 let path = path.into_os_string().into_string().unwrap();
 
-                let mut args = args.clone();
+                let mut args = args;
                 args.insert(0, path.clone());
 
                 let path = string_to_ptr(path);
                 let args = string_vec_to_ptr(args);
 
-                let env = if env.is_some() {
-                    string_vec_to_ptr(env.unwrap())
+                let env = if let Some(env) = env {
+                    string_vec_to_ptr(env)
                 } else {
                     ptr::null()
                 };

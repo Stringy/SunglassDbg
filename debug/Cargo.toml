@@ -11,3 +11,4 @@ libc = "0.2.86"
 cfg-if = "1.0.0"
 common = { path = "../common" }
 log = "0.4.14"
+nix = "0.20.0"

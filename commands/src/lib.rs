@@ -1,5 +1,6 @@
 mod cont;
 mod run;
+mod breakpoints;
 
 extern crate clap;
 extern crate debug;
@@ -32,6 +33,7 @@ pub enum Sub {
     #[clap(version = "1.0")]
     Cont(cont::ContinueCommand),
     Run(run::RunCommand),
+    Break(breakpoints::BreakCommand),
 }
 
 impl Commands {
@@ -41,7 +43,8 @@ impl Commands {
                 use Sub::*;
                 match commands.cmd {
                     Cont(c) => Some(Box::new(c)),
-                    Run(c) => Some(Box::new(c))
+                    Run(c) => Some(Box::new(c)),
+                    Break(c) => Some(Box::new(c))
                 }
             }
             Err(e) => {

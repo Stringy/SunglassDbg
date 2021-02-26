@@ -1,13 +1,13 @@
-extern crate rustyline;
-extern crate log;
-extern crate debug;
 extern crate commands;
+extern crate debug;
+extern crate log;
+extern crate rustyline;
 
 use std::error::Error;
 
 use rustyline::{Cmd, CompletionType, Config, EditMode, Editor, KeyEvent};
 
-use commands::{Command, Commands};
+use commands::Commands;
 use common::cli::{Clap, CommandLine};
 use debug::Debugger;
 
@@ -19,15 +19,21 @@ pub struct App {
     history_file: String,
 }
 
-impl App {
-    pub fn new() -> Self {
+impl Default for App {
+    fn default() -> Self {
         Self {
             history_file: String::from(".sdbg_history")
         }
     }
+}
+
+impl App {
+    pub fn new() -> Self {
+        Default::default()
+    }
 
     pub fn run(&self) -> Result<(), Box<dyn Error>> {
-        logger::init_logger();
+        logger::init_logger().unwrap();
 
         let cmdline = CommandLine::parse_from(std::env::args());
         let mut debugger = Debugger::from_config(cmdline);
@@ -39,7 +45,7 @@ impl App {
             .build();
 
         let mut rl: Editor<()> = Editor::with_config(config);
-        rl.load_history(self.history_file.as_str());
+        rl.load_history(self.history_file.as_str())?;
         rl.bind_sequence(KeyEvent::ctrl('r'), Cmd::HistorySearchForward);
         rl.bind_sequence(KeyEvent::ctrl('l'), Cmd::ClearScreen);
 
@@ -70,7 +76,7 @@ impl App {
             }
         }
 
-        rl.append_history(self.history_file.as_str());
+        rl.append_history(self.history_file.as_str())?;
         Ok(())
     }
 }

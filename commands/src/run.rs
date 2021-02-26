@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::ffi::OsString;
 
 use clap::Clap;
 

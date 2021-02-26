@@ -13,8 +13,6 @@ use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, List, ListItem, Paragraph};
 use unicode_width::UnicodeWidthStr;
 
-use debug::Debugger;
-
 use crate::event::{Event, Events};
 
 const DEFAULT_HIST_FILE: &'static str = ".sdbg_history";
@@ -25,16 +23,16 @@ pub struct App {
     input: String,
     output: Vec<String>,
     history: Vec<String>,
-    history_file: String,
+    _history_file: String,
 }
 
 impl App {
-    pub fn new<P: Into<PathBuf>>(path: P) -> Self {
+    pub fn new<P: Into<PathBuf>>(_path: P) -> Self {
         Self {
             input: String::new(),
             output: Vec::new(),
             history: Vec::new(),
-            history_file: String::from(DEFAULT_HIST_FILE),
+            _history_file: String::from(DEFAULT_HIST_FILE),
         }
     }
 

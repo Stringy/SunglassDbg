@@ -1,19 +1,9 @@
-[package]
-name = "sunglassdbg"
-version = "0.1.0"
-authors = ["giles"]
-edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[[bin]]
-name = 'sunnydbg'
-path = 'bin/sunnydbg.rs'
-
-[dependencies]
-sundbg = { path = "./sundbg" }
-rustyline = "7.1.0"
-clap = "3.0.0-beta.2"
-tui = "0.14.0"
-termion = "1.5.6"
-unicode-width = "0.1.8"
+[workspace]
+members = [
+    "sunglassdbg",
+    "debug",
+    "common",
+    "ui/tui",
+    "ui/cli",
+    "commands"
+]
